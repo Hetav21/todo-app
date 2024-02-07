@@ -2,6 +2,7 @@ import express, {ErrorRequestHandler, NextFunction, Request, Response} from "exp
 import bodyParser from "body-parser";
 import adminRouter from "./routes/admin";
 import userRouter from "./routes/user";
+import { log } from "console";
 
 const app = express()
 const port = 3000
@@ -13,6 +14,7 @@ app.use("/user", userRouter);
 
 // Global Catch:
 app.use(function(err: ErrorRequestHandler, req: Request, res: Response, next: NextFunction): void{
+    log(err);
     res.status(404).json({
         msg: 'Internal Server Error'
     })

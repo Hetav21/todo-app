@@ -1,11 +1,12 @@
 import { Router, Request, Response } from "express";
-import { user as userType } from "../CustomTypes/userType";
+import { user, user as userType } from "../CustomTypes/userType";
 import { PrismaClient } from "@prisma/client";
 import userSchema from "../InputValidation/user";
-import z, { object } from "zod";
+import z from "zod";
 import "dotenv";
 import jwt from "jsonwebtoken";
-import userMiddleware from "../auth/user";
+import userAuth from "../auth/user";
+import { log } from "console";
 
 const prisma = new PrismaClient();
 
@@ -116,10 +117,69 @@ router.get("/signin", async (req: Request, res: Response) => {
   return;
 });
 
-router.put("/update-profile", userMiddleware,async (req: Request, res: Response) => {
+router.put("/update-profile", userAuth, async (req: Request, res: Response) => {
+  const user: userType = req.body.user as userType; 
 
+  const updatedUser: userType = req.body.updatedUser as userType;
 
+  const password = req.body.password as userType["password"];
 
+  user["password"] = password;
+
+  const parseOld = userSchema.safeParse(user);
+
+  const parse = userSchema.safeParse(updatedUser);
+
+  if (!parse.success || !parseOld.success) {
+    res.status(411).json({
+      userUpdated: false,
+      inputError: true,
+    });
+
+    return ;  
+  }
+
+  const findUser = await prisma.user.findFirst({
+    where: {
+     name: user["name"],
+     email: user["email"],
+     username: user["username"],
+     password: user["password"],
+    },
+  });
+
+  if (findUser == null) {
+    res.status(411).json({
+      userExists: false,
+      userUpdated: false,
+      inputError: true,
+    });
+
+    return;
+  }
+
+  const updateUser = await prisma.user.update({
+    where: {
+      username: user["username"],
+      email: user["email"],
+      password: user["password"],
+      name: user["name"],
+    },
+    data: {
+      name: updatedUser["name"],
+      email: updatedUser["email"],
+      username: updatedUser["username"],
+      password: updatedUser["password"],
+    },
+  });
+
+  res.status(200).json({
+    userUpdated: true,
+    userExists: true,
+    inputError: false,
+  })
+
+  return ;
 })
 
 export = router;
