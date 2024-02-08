@@ -2,14 +2,14 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import "dotenv";
 
-function userAuth(req: Request, res: Response, next: NextFunction){
+function adminMiddleware(req: Request, res: Response, next: NextFunction){
     const idToken: string = req.headers.authorization!;
     const jwtToken: string = idToken.split(" ")["1"];
 
     const verify:any = jwt.verify(jwtToken, process.env.JWT_SECRET!);
 
     if(verify != undefined){
-        req.body.user = verify; 
+        req.body.admin = verify; 
         next();
     }
     
@@ -20,4 +20,4 @@ function userAuth(req: Request, res: Response, next: NextFunction){
     }
 }
 
-export = userAuth;
+export = adminMiddleware;

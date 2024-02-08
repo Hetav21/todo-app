@@ -5,12 +5,21 @@ import userSchema from "../InputValidation/user";
 import z from "zod";
 import "dotenv";
 import jwt from "jsonwebtoken";
-import userAuth from "../auth/user";
-import { log } from "console";
+import bcrypt from "bcrypt";
+import userMiddleware from "../Middleware/user";
+import userAuth from "../Authentication/user";
 
 const prisma = new PrismaClient();
 
 const router = Router();
+
+// async function hashPassword(password: string): Promise<string> {
+//   const res = await bcrypt.hashSync(password, 10);
+
+//   return res.hash;
+// }
+
+// console.log(hashPassword("password"));
 
 router.post("/signup", async (req: Request, res: Response) => {
   const user: userType = req.body.user;
@@ -51,6 +60,7 @@ router.post("/signup", async (req: Request, res: Response) => {
       name: user["name"],
       email: user["email"],
       username: user["username"],
+      // username: hashPassword(user["username"]),
       password: user["password"],
     },
   });
@@ -111,14 +121,14 @@ router.get("/signin", async (req: Request, res: Response) => {
     userExists: true,
     inputError: false,
     user: status,
-    idToken: "Bearer " + idToken
+    idToken: "Bearer " + idToken,
   });
 
   return;
 });
 
-router.put("/update-profile", userAuth, async (req: Request, res: Response) => {
-  const user: userType = req.body.user as userType; 
+router.put("/update-profile", userMiddleware, userAuth, async (req: Request, res: Response) => {
+  const user: userType = req.body.user as userType;
 
   const updatedUser: userType = req.body.updatedUser as userType;
 
@@ -136,15 +146,15 @@ router.put("/update-profile", userAuth, async (req: Request, res: Response) => {
       inputError: true,
     });
 
-    return ;  
+    return;
   }
 
   const findUser = await prisma.user.findFirst({
     where: {
-     name: user["name"],
-     email: user["email"],
-     username: user["username"],
-     password: user["password"],
+      name: user["name"],
+      email: user["email"],
+      username: user["username"],
+      password: user["password"],
     },
   });
 
@@ -177,9 +187,9 @@ router.put("/update-profile", userAuth, async (req: Request, res: Response) => {
     userUpdated: true,
     userExists: true,
     inputError: false,
-  })
+  });
 
-  return ;
-})
+  return;
+});
 
 export = router;
